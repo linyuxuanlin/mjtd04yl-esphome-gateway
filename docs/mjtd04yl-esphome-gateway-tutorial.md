@@ -1,8 +1,12 @@
 # 我给一盏没有 Wi-Fi 的米家台灯，补了一块 ESP32 本地网关
 
-事情是从 Home Assistant 里一张灰色的台灯卡片开始的。
+事情不是从 Home Assistant 里一张灰色卡片开始的，而是从每天开灯前那几秒等待开始的。
 
-米家账号已经登录，`MJTD04YL` 也确实被识别成了 `yeelink.light.lamp21`，可实体始终显示“不可用”。重登账号、重载集成都没有改变什么。后来才发现，问题根本不在账号：这盏灯没有 Wi-Fi，日常通信走的是 Xiaomi BLE Mesh。手机靠近时能直接控制；想让它常驻在线，则需要一台懂这套协议的网关。
+`MJTD04YL` 平时可以在米家 App 里用蓝牙控制，但手机每次重新靠近，App 都要先找到台灯、建立连接，之后按钮才真正可用。等待并不算很久，可一个本该随手完成的动作，每次都要停下来等一等，久了就很别扭。
+
+小米生态里的标准答案是再配一台蓝牙 Mesh 网关。我只想解决这一盏灯，不想为此再买一个网关；手边又刚好有一块闲置的 Beetle ESP32-C3。它有 Wi-Fi，也有 BLE，而且体积小到可以藏在桌边，于是思路就有了：让这块小板子一直守在灯旁边，替手机完成耗时的蓝牙连接，再把台灯作为普通 light 实体交给 Home Assistant。
+
+真正动手后，我也试过直接把米家账号接进 Home Assistant。`MJTD04YL` 的确被识别成了 `yeelink.light.lamp21`，可实体始终显示“不可用”。重登账号、重载集成都没有改变什么。原因不在账号，而在通信链路：这盏灯没有 Wi-Fi，日常通信走的是 Xiaomi BLE Mesh；想让它常驻在线，仍然需要一个真正懂这套协议的本地网关。
 
 <p align="center">
   <img src="https://www.gizmochina.com/wp-content/uploads/2021/09/MIJIA-Smart-Rechargeable-Desk-Lamp-2.jpg" alt="米家智能充电台灯 MJTD04YL 产品实图" width="430">
@@ -10,7 +14,7 @@
 
 <p align="center"><em>图 1：米家智能充电台灯 MJTD04YL。产品图来自 <a href="https://www.gizmochina.com/2021/09/29/xiaomi-launches-the-mijia-smart-rechargeable-desk-lamp-mijia-electric-kettle-2/">Gizmochina 收录的小米发布物料</a>，不是我家的现场照片。</em></p>
 
-手边刚好有一块闲置的 Beetle ESP32-C3。它有 Wi-Fi，也有 BLE，而且体积小到可以藏在桌边。于是方案慢慢清楚了：让 ESP32 留在台灯旁边，负责登录 BLE Mesh、收发加密命令；Home Assistant 只和 ESPHome 的标准 light 实体说话。
+最后的分工很简单：ESP32 留在台灯旁边，负责登录 BLE Mesh、收发加密命令；Home Assistant 只和 ESPHome 的标准 light 实体说话。这样一来，等待连接的是那块一直通电的小板子，不再是每次刚拿起手机的我。
 
 这篇文章记录的是已经跑通的实机方案，不是“理论上应该可以”的拼装教程。目前验证组合是：
 
@@ -143,7 +147,7 @@ esphome run esphome/beetle-esp32-c3-gateway.yaml
 
 > 设置 → 设备与服务 → 添加集成 → ESPHome
 
-填写节点 IP，再输入 `esphome/secrets.yaml` 中的 `esphome_api_encryption_key`。成功后应该出现一个“米家智能充电台灯” light 实体，以及“本地连接”诊断实体。
+填写节点 IP，再输入 `esphome/secrets.yaml` 中的 `esphome_api_encryption_key`。成功后应该出现一个“米家智能充电台灯” light 实体，以及“本地连接”诊断实体。如果米家官方集成还留着一个同名的不可用实体，可以把 ESPHome 提供的实体改名为“台灯（通过ESP32-C3 连接）”，一眼就能看出控制链路。
 
 第一次测试我建议按这个顺序，不要一上来就把所有滑块拖来拖去：
 
@@ -153,9 +157,13 @@ esphome run esphome/beetle-esp32-c3-gateway.yaml
 4. 色温在暖白与冷白之间移动。
 5. 拔掉 ESP32，再接到普通 USB 电源，观察它能否自行回到 HA。
 
+![台灯通过 ESP32-C3 接入 Home Assistant 后的控制界面](assets/home-assistant-lamp-control-online.jpg)
+
+*图 3：本机 Home Assistant 的真实控制界面。完整名称、开关、亮度和色温均可见；截图已裁掉区域、账号和设备标识。*
+
 ![ESP32 在线时的 Home Assistant 诊断卡片](assets/home-assistant-esp32-diagnostics-online.jpg)
 
-*图 3：本机 Home Assistant 的真实在线截图。固件版本、Status、Uptime 与 Wi-Fi Signal 均已恢复；截图已裁掉设备尾号、区域和账号信息。*
+*图 4：同一个节点的真实诊断卡片。固件版本、Status、Uptime 与 Wi-Fi Signal 均已恢复；截图已裁掉设备尾号、区域和账号信息。*
 
 ## 可选的 OLED：它不是装饰，而是一眼能看懂的状态牌
 
@@ -169,13 +177,13 @@ esphome run esphome/beetle-esp32-c3.yaml
 
 ![Beetle ESP32-C3 与 OLED 接线图](assets/oled-wiring.svg)
 
-*图 4：本项目默认接线。GPIO0 → SCL，GPIO1 → SDA。*
+*图 5：本项目默认接线。GPIO0 → SCL，GPIO1 → SDA。*
 
 屏幕上方显示 HA API 是否在线；`OUT` 读天气实体里的室外温湿度，`IN` 读空气净化器或其他室内传感器。下面这张图是直接按固件显示代码重绘的等比例示意，不是拿渲染图冒充实拍：
 
 ![OLED 气候面板布局示意](assets/oled-layout.svg)
 
-*图 5：128×64 OLED 界面示意。实际字形会受 ESPHome 下载到的 Roboto 字体版本影响。*
+*图 6：128×64 OLED 界面示意。实际字形会受 ESPHome 下载到的 Roboto 字体版本影响。*
 
 把自己 HA 里的实体 ID 填进 `secrets.yaml`：
 
@@ -197,7 +205,7 @@ outdoor_weather_entity_id: weather.example_home
 
 ![ESP32 断电时的 Home Assistant 诊断卡片](assets/home-assistant-esp32-diagnostics-offline.jpg)
 
-*图 6：本机 Home Assistant 的真实断线截图。拍摄时 ESP32 已拔电，所以 Status 显示“已断开”，其余诊断值不可用；截图已裁掉设备尾号、区域和账号信息。*
+*图 7：本机 Home Assistant 的真实断线截图。拍摄时 ESP32 已拔电，所以 Status 显示“已断开”，其余诊断值不可用；截图已裁掉设备尾号、区域和账号信息。*
 
 这张“失败截图”反而很有用：它说明 HA 里的设备卡片不会因为节点断电而消失。看到卡片不等于设备在线，Status 才是更直接的判断依据。
 

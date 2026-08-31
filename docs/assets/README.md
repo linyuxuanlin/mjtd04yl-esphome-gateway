@@ -4,6 +4,7 @@
 
 | 文件 | 类型 | 说明 |
 |---|---|---|
+| `home-assistant-lamp-control-online.jpg` | 本项目截图 | 2026-08-31 截自本机 Home Assistant。显示改名后的 ESPHome 台灯实体、当前状态、开关、亮度与色温，并裁掉区域、账号和设备标识。 |
 | `home-assistant-esp32-diagnostics-offline.jpg` | 本项目截图 | 2026-08-31 截自本机 Home Assistant。只保留诊断卡片，并裁掉设备尾号、区域、账号等标识。 |
 | `home-assistant-esp32-diagnostics-online.jpg` | 本项目截图 | 2026-08-31 恢复连接后截自本机 Home Assistant。显示固件版本、已连接、运行时间与 Wi-Fi 信号，并裁掉设备尾号、区域、账号等标识。 |
 | `oled-layout.svg` | 本项目自绘 | 根据 `esphome/beetle-esp32-c3.yaml` 的 128×64 显示代码等比例重绘，不是 OLED 实拍。 |

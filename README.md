@@ -1,6 +1,6 @@
 # MJTD04YL ESPHome 本地网关
 
-Home Assistant 能认出这盏台灯，却控制不了它；手边正好有一块闲置的 ESP32-C3。这个项目就是从这里开始的。
+每次用米家 App 控制这盏蓝牙台灯，都要先等手机重新连上它。我不想为了这一盏灯再买一台米家网关，于是让手边的 Beetle ESP32-C3 接管这段蓝牙连接，再把台灯交给 Home Assistant。
 
 它让 Beetle ESP32-C3 留在台灯旁边，负责完成 Xiaomi BLE Mesh 登录与加密通信，再通过 ESPHome Native API，把开关、亮度和色温交给 Home Assistant。控制链路留在局域网与蓝牙范围内，不需要米家网关转发每条指令。
 
@@ -33,10 +33,10 @@ flowchart LR
 ```
 
 <p align="center">
-  <img src="docs/assets/home-assistant-esp32-diagnostics-online.jpg" alt="ESP32 在 Home Assistant 中在线" width="520">
+  <img src="docs/assets/home-assistant-lamp-control-online.jpg" alt="台灯通过 ESP32-C3 接入 Home Assistant 后的控制界面" width="430">
 </p>
 
-<p align="center"><em>本机 Home Assistant 实际在线状态：固件版本、连接状态、运行时间与 Wi-Fi 信号均已回传。</em></p>
+<p align="center"><em>本机 Home Assistant 实际控制界面。实体已改名为“台灯（通过ESP32-C3 连接）”，与米家云端留下的不可用实体区分开。</em></p>
 
 ## 快速开始
 
