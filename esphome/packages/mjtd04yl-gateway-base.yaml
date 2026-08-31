@@ -2,7 +2,7 @@ substitutions:
   node_name: mjtd04yl-gateway
   node_friendly_name: MJTD04YL 本地网关
   project_variant: headless
-  project_version: "1.5.0"
+  project_version: "1.6.0"
   lamp_name: 米家智能充电台灯
 
 esphome:
@@ -87,6 +87,7 @@ light:
     default_transition_length: 0s
     restore_mode: ALWAYS_OFF
     authenticated:
+      id: mjtd04yl_authenticated
       name: ${lamp_name}本地连接
       entity_category: diagnostic
 
@@ -99,6 +100,7 @@ sensor:
     name: Uptime
     update_interval: 60s
   - platform: wifi_signal
+    id: wifi_signal_db
     name: Wi-Fi Signal
     update_interval: 60s
 

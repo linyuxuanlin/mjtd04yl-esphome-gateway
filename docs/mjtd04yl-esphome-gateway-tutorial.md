@@ -179,7 +179,9 @@ esphome run esphome/beetle-esp32-c3.yaml
 
 *图 5：本项目默认接线。GPIO0 → SCL，GPIO1 → SDA。*
 
-屏幕上方显示 HA API 是否在线；`OUT` 读天气实体里的室外温湿度，`IN` 读空气净化器或其他室内传感器。下面这张图是直接按固件显示代码重绘的等比例示意，不是拿渲染图冒充实拍：
+OLED 采用单页设计，不需要按钮切换：顶栏显示时间、HA、台灯 BLE 与 Wi-Fi 状态；中间是室内外温湿度；底部显示空气净化器的 PM2.5 和 VOC。室内外温差超过 ±3°C、湿度低于 40% 或高于 70%、PM2.5 高于 35、VOC 高于 400 ppb 时，相应数值旁会常驻 ↑/↓；第一次跨过阈值还会弹出 5 秒消息框，然后自动回到主画面。这些数值只是可修改的显示提示，不是医疗标准。
+
+下面这张图是直接按固件显示代码重绘的等比例示意，不是拿渲染图冒充实拍：
 
 ![OLED 气候面板布局示意](assets/oled-layout.svg)
 
@@ -191,9 +193,11 @@ esphome run esphome/beetle-esp32-c3.yaml
 indoor_temperature_entity_id: sensor.example_indoor_temperature
 indoor_humidity_entity_id: sensor.example_indoor_humidity
 outdoor_weather_entity_id: weather.example_home
+pm25_entity_id: sensor.example_indoor_pm25
+voc_entity_id: sensor.example_indoor_voc
 ```
 
-天气实体的温度和湿度来自属性；室内温湿度则是两个独立 sensor。实体不可用时，屏幕会显示 `--.-°` 或 `--%`，这通常是实体 ID 写错，不是 OLED 坏了。
+天气实体的温度和湿度来自属性；室内温湿度、PM2.5 和 VOC 是独立 sensor。实体不可用时，屏幕会显示 `--.-°`、`--%` 或 `--`，这通常是实体 ID 写错，不是 OLED 坏了。
 
 ## 我会怎样判断“到底是哪一段断了”
 

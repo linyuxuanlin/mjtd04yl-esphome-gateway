@@ -1,4 +1,4 @@
-# DFRobot Beetle ESP32-C3 gateway with an optional 128x64 I2C OLED.
+# DFRobot Beetle ESP32-C3 gateway with a single-page 128x64 I2C OLED dashboard.
 substitutions:
   node_name: beetle-esp32-c3
   node_friendly_name: Beetle ESP32-C3 台灯网关
@@ -10,6 +10,17 @@ substitutions:
   indoor_temperature_entity_id: !secret indoor_temperature_entity_id
   indoor_humidity_entity_id: !secret indoor_humidity_entity_id
   outdoor_weather_entity_id: !secret outdoor_weather_entity_id
+  pm25_entity_id: !secret pm25_entity_id
+  voc_entity_id: !secret voc_entity_id
+
+  # Display hints only. Tune these for the room and sensor; they are not
+  # medical or regulatory limits.
+  temperature_delta_alert: "3.0"
+  indoor_humidity_low: "40.0"
+  indoor_humidity_high: "70.0"
+  pm25_high: "35.0"
+  voc_high: "400.0"
+  popup_duration_ms: "5000"
 
 packages:
   gateway: !include packages/mjtd04yl-gateway-base.yaml
@@ -22,11 +33,54 @@ i2c:
 
 font:
   - file: "gfonts://Roboto"
+    id: font_tiny
+    size: 9
+  - file: "gfonts://Roboto"
     id: font_small
     size: 10
   - file: "gfonts://Roboto"
     id: font_value
-    size: 17
+    size: 14
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+globals:
+  - id: popup_kind
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: popup_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: last_ha_state
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: last_lamp_state
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          const bool ha_now = id(node_status).state;
+          if (ha_now != id(last_ha_state)) {
+            id(last_ha_state) = ha_now;
+            id(popup_kind) = ha_now ? 9 : 7;
+            id(popup_until_ms) = millis() + ${popup_duration_ms};
+          }
+
+          const bool lamp_now = id(mjtd04yl_authenticated).state;
+          if (lamp_now != id(last_lamp_state)) {
+            id(last_lamp_state) = lamp_now;
+            id(popup_kind) = lamp_now ? 10 : 8;
+            id(popup_until_ms) = millis() + ${popup_duration_ms};
+          }
 
 display:
   - platform: ssd1306_i2c
@@ -34,40 +88,163 @@ display:
     address: ${oled_address}
     i2c_id: oled_bus
     rotation: 180
-    update_interval: 2s
+    update_interval: 1s
     lambda: |-
-      it.print(0, 0, id(font_small), "HOME CLIMATE");
-      it.printf(127, 0, id(font_small), TextAlign::TOP_RIGHT,
-          "%s", id(node_status).state ? "HA OK" : "HA --");
-      it.horizontal_line(0, 12, 128);
+      auto draw_status_dot = [&](int x, int y, bool active) {
+        if (active) {
+          it.filled_circle(x, y, 2);
+        } else {
+          it.circle(x, y, 2);
+        }
+      };
+      auto draw_up = [&](int x, int y) {
+        it.line(x, y + 6, x, y);
+        it.line(x, y, x - 3, y + 3);
+        it.line(x, y, x + 3, y + 3);
+      };
+      auto draw_down = [&](int x, int y) {
+        it.line(x, y, x, y + 6);
+        it.line(x, y + 6, x - 3, y + 3);
+        it.line(x, y + 6, x + 3, y + 3);
+      };
 
-      it.print(0, 20, id(font_small), "OUT");
-      if (isnan(id(outdoor_temperature).state)) {
-        it.print(28, 15, id(font_value), "--.-°");
+      const auto now = id(ha_time).now();
+      if (now.is_valid()) {
+        it.printf(0, 0, id(font_tiny), "%02d:%02d", now.hour, now.minute);
       } else {
-        it.printf(28, 15, id(font_value), "%.1f°", id(outdoor_temperature).state);
+        it.print(0, 0, id(font_tiny), "--:--");
+      }
+
+      it.print(34, 0, id(font_tiny), "HA");
+      draw_status_dot(49, 4, id(node_status).state);
+      it.print(56, 0, id(font_tiny), "L");
+      draw_status_dot(64, 4, id(mjtd04yl_authenticated).state);
+      if (isnan(id(wifi_signal_db).state)) {
+        it.print(73, 0, id(font_tiny), "W --");
+      } else {
+        it.printf(73, 0, id(font_tiny), "W %.0f", id(wifi_signal_db).state);
+      }
+      it.horizontal_line(0, 11, 128);
+
+      it.print(0, 17, id(font_small), "IN");
+      if (isnan(id(indoor_temperature).state)) {
+        it.print(19, 13, id(font_value), "--.-°");
+      } else {
+        it.printf(19, 13, id(font_value), "%.1f°", id(indoor_temperature).state);
+      }
+      if (!isnan(id(indoor_temperature_delta).state)) {
+        if (id(indoor_temperature_delta).state >= ${temperature_delta_alert}) {
+          draw_up(65, 18);
+        } else if (id(indoor_temperature_delta).state <= -${temperature_delta_alert}) {
+          draw_down(65, 18);
+        }
+      }
+      if (isnan(id(indoor_humidity).state)) {
+        it.print(127, 13, id(font_value), TextAlign::TOP_RIGHT, "--%");
+      } else {
+        it.printf(127, 13, id(font_value), TextAlign::TOP_RIGHT,
+            "%.0f%%", id(indoor_humidity).state);
+        if (id(indoor_humidity).state >= ${indoor_humidity_high}) {
+          draw_up(96, 18);
+        } else if (id(indoor_humidity).state <= ${indoor_humidity_low}) {
+          draw_down(96, 18);
+        }
+      }
+
+      it.print(0, 35, id(font_small), "OUT");
+      if (isnan(id(outdoor_temperature).state)) {
+        it.print(24, 31, id(font_value), "--.-°");
+      } else {
+        it.printf(24, 31, id(font_value), "%.1f°", id(outdoor_temperature).state);
       }
       if (isnan(id(outdoor_humidity).state)) {
-        it.print(127, 15, id(font_value), TextAlign::TOP_RIGHT, "--%");
+        it.print(127, 31, id(font_value), TextAlign::TOP_RIGHT, "--%");
       } else {
-        it.printf(127, 15, id(font_value), TextAlign::TOP_RIGHT,
+        it.printf(127, 31, id(font_value), TextAlign::TOP_RIGHT,
             "%.0f%%", id(outdoor_humidity).state);
       }
 
-      it.horizontal_line(0, 38, 128);
+      it.horizontal_line(0, 48, 128);
+      if (isnan(id(pm25).state)) {
+        it.print(0, 51, id(font_small), "PM --");
+      } else {
+        it.printf(0, 51, id(font_small), "PM %.0f", id(pm25).state);
+        if (id(pm25).state >= ${pm25_high}) {
+          draw_up(40, 52);
+        }
+      }
+      if (isnan(id(voc).state)) {
+        it.print(127, 51, id(font_small), TextAlign::TOP_RIGHT, "VOC --");
+      } else {
+        it.printf(127, 51, id(font_small), TextAlign::TOP_RIGHT,
+            "VOC %.0f", id(voc).state);
+        if (id(voc).state >= ${voc_high}) {
+          draw_up(82, 52);
+        }
+      }
 
-      it.print(0, 45, id(font_small), "IN");
-      if (isnan(id(indoor_temperature).state)) {
-        it.print(28, 40, id(font_value), "--.-°");
-      } else {
-        it.printf(28, 40, id(font_value), "%.1f°", id(indoor_temperature).state);
+      const bool popup_active = id(popup_kind) != 0 &&
+          static_cast<int32_t>(id(popup_until_ms) - millis()) > 0;
+      if (!popup_active) {
+        id(popup_kind) = 0;
+        return;
       }
-      if (isnan(id(indoor_humidity).state)) {
-        it.print(127, 40, id(font_value), TextAlign::TOP_RIGHT, "--%");
-      } else {
-        it.printf(127, 40, id(font_value), TextAlign::TOP_RIGHT,
-            "%.0f%%", id(indoor_humidity).state);
+
+      it.filled_rectangle(5, 13, 118, 44, COLOR_OFF);
+      it.rectangle(5, 13, 118, 44, COLOR_ON);
+      char detail[32];
+      detail[0] = '\0';
+      const char *title = "NOTICE";
+      switch (id(popup_kind)) {
+        case 1:
+          title = "TEMP HIGH";
+          snprintf(detail, sizeof(detail), "IN-OUT +%.1fC",
+              id(indoor_temperature_delta).state);
+          break;
+        case 2:
+          title = "TEMP LOW";
+          snprintf(detail, sizeof(detail), "IN-OUT %.1fC",
+              id(indoor_temperature_delta).state);
+          break;
+        case 3:
+          title = "HUMIDITY HIGH";
+          snprintf(detail, sizeof(detail), "%.0f%% > %.0f%%",
+              id(indoor_humidity).state, ${indoor_humidity_high});
+          break;
+        case 4:
+          title = "HUMIDITY LOW";
+          snprintf(detail, sizeof(detail), "%.0f%% < %.0f%%",
+              id(indoor_humidity).state, ${indoor_humidity_low});
+          break;
+        case 5:
+          title = "PM2.5 HIGH";
+          snprintf(detail, sizeof(detail), "%.0f > %.0f",
+              id(pm25).state, ${pm25_high});
+          break;
+        case 6:
+          title = "VOC HIGH";
+          snprintf(detail, sizeof(detail), "%.0f > %.0f ppb",
+              id(voc).state, ${voc_high});
+          break;
+        case 7:
+          title = "HA OFFLINE";
+          snprintf(detail, sizeof(detail), "CHECK NETWORK");
+          break;
+        case 8:
+          title = "LAMP OFFLINE";
+          snprintf(detail, sizeof(detail), "BLE RETRYING");
+          break;
+        case 9:
+          title = "HA ONLINE";
+          snprintf(detail, sizeof(detail), "CONNECTED");
+          break;
+        case 10:
+          title = "LAMP ONLINE";
+          snprintf(detail, sizeof(detail), "BLE CONNECTED");
+          break;
       }
+      it.print(64, 18, id(font_small), TextAlign::TOP_CENTER, title);
+      it.print(64, 34, id(font_value), TextAlign::TOP_CENTER, detail);
 
 sensor:
   - platform: homeassistant
@@ -78,6 +255,17 @@ sensor:
     id: indoor_humidity
     entity_id: ${indoor_humidity_entity_id}
     internal: true
+    on_value_range:
+      - below: ${indoor_humidity_low}
+        then:
+          - lambda: |-
+              id(popup_kind) = 4;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};
+      - above: ${indoor_humidity_high}
+        then:
+          - lambda: |-
+              id(popup_kind) = 3;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};
   - platform: homeassistant
     id: outdoor_temperature
     entity_id: ${outdoor_weather_entity_id}
@@ -88,3 +276,44 @@ sensor:
     entity_id: ${outdoor_weather_entity_id}
     attribute: humidity
     internal: true
+  - platform: homeassistant
+    id: pm25
+    entity_id: ${pm25_entity_id}
+    internal: true
+    on_value_range:
+      - above: ${pm25_high}
+        then:
+          - lambda: |-
+              id(popup_kind) = 5;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};
+  - platform: homeassistant
+    id: voc
+    entity_id: ${voc_entity_id}
+    internal: true
+    on_value_range:
+      - above: ${voc_high}
+        then:
+          - lambda: |-
+              id(popup_kind) = 6;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};
+  - platform: template
+    id: indoor_temperature_delta
+    internal: true
+    update_interval: 10s
+    lambda: |-
+      if (isnan(id(indoor_temperature).state) ||
+          isnan(id(outdoor_temperature).state)) {
+        return {};
+      }
+      return id(indoor_temperature).state - id(outdoor_temperature).state;
+    on_value_range:
+      - below: -${temperature_delta_alert}
+        then:
+          - lambda: |-
+              id(popup_kind) = 2;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};
+      - above: ${temperature_delta_alert}
+        then:
+          - lambda: |-
+              id(popup_kind) = 1;
+              id(popup_until_ms) = millis() + ${popup_duration_ms};

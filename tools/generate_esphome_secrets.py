@@ -36,6 +36,8 @@ def main() -> None:
         "indoor_temperature_entity_id": "sensor.indoor_temperature",
         "indoor_humidity_entity_id": "sensor.indoor_humidity",
         "outdoor_weather_entity_id": "weather.home",
+        "pm25_entity_id": "sensor.indoor_pm25",
+        "voc_entity_id": "sensor.indoor_voc",
     }
     for key, value in placeholders.items():
         if key not in keys:

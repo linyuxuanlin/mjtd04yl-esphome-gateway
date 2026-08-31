@@ -1,20 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 384" role="img" aria-labelledby="title desc">
-  <title id="title">ESPHome OLED 气候面板布局示意</title>
-  <desc id="desc">128x64 单色 OLED 的等比例界面：上方显示 Home Assistant 连接状态，中间显示室外温湿度，下方显示室内温湿度。</desc>
+  <title id="title">ESPHome OLED 单页家庭状态面板</title>
+  <desc id="desc">128x64 单色 OLED 等比例界面：顶栏显示时间、HA、台灯和 Wi-Fi；中间显示室内外温湿度及趋势箭头；底部显示 PM2.5 与 VOC。</desc>
   <rect width="768" height="384" rx="30" fill="#11151b"/>
   <rect x="24" y="24" width="720" height="336" rx="18" fill="#050708" stroke="#39414b" stroke-width="4"/>
-  <g fill="#f4f7f8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
-    <text x="56" y="76" font-size="34" font-weight="700" letter-spacing="2">HOME CLIMATE</text>
-    <text x="712" y="76" font-size="34" font-weight="700" text-anchor="end">HA OK</text>
-    <path d="M48 98H720" stroke="#f4f7f8" stroke-width="4"/>
+  <g fill="#f4f7f8" stroke="#f4f7f8" font-family="DejaVu Sans Mono, monospace">
+    <g stroke="none" font-size="42" font-weight="700">
+      <text x="48" y="78">11:42</text>
+      <text x="252" y="78">HA</text>
+      <text x="366" y="78">L</text>
+      <text x="450" y="78">W -36</text>
+    </g>
+    <circle cx="342" cy="62" r="12"/>
+    <circle cx="414" cy="62" r="12"/>
+    <path d="M48 96H720" stroke-width="4"/>
 
-    <text x="56" y="169" font-size="34" font-weight="700">OUT</text>
-    <text x="220" y="172" font-size="66" font-weight="700">31.0°</text>
-    <text x="712" y="172" font-size="66" font-weight="700" text-anchor="end">81%</text>
-    <path d="M48 215H720" stroke="#f4f7f8" stroke-width="4"/>
+    <g stroke="none" font-weight="700">
+      <text x="48" y="170" font-size="40">IN</text>
+      <text x="164" y="170" font-size="70">31.0°</text>
+      <text x="712" y="170" font-size="70" text-anchor="end">81%</text>
+      <text x="48" y="270" font-size="40">OUT</text>
+      <text x="188" y="270" font-size="70">27.2°</text>
+      <text x="712" y="270" font-size="70" text-anchor="end">73%</text>
+      <text x="48" y="340" font-size="48">PM 2</text>
+      <text x="712" y="340" font-size="48" text-anchor="end">VOC 155</text>
+    </g>
 
-    <text x="56" y="302" font-size="34" font-weight="700">IN</text>
-    <text x="220" y="305" font-size="66" font-weight="700">30.4°</text>
-    <text x="712" y="305" font-size="66" font-weight="700" text-anchor="end">76%</text>
+    <g fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M390 160V116M390 116l-18 18M390 116l18 18"/>
+      <path d="M570 160V116M570 116l-18 18M570 116l18 18"/>
+    </g>
+    <path d="M48 292H720" stroke-width="4"/>
   </g>
 </svg>
