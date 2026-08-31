@@ -28,7 +28,7 @@ cd mjtd04yl-esphome-gateway
 
 python3 -m venv .venv-esphome
 source .venv-esphome/bin/activate
-pip install "esphome>=2026.8,<2026.9"
+pip install -r requirements-esphome.txt
 ```
 
 ## 先说清楚 LTMK

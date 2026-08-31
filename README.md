@@ -29,7 +29,7 @@ flowchart LR
 ```sh
 python3 -m venv .venv-esphome
 source .venv-esphome/bin/activate
-pip install "esphome>=2026.8,<2026.9"
+pip install -r requirements-esphome.txt
 
 python3 tools/generate_esphome_secrets.py
 # 编辑 esphome/secrets.yaml，填写台灯 MAC 与 gatt_ltmk
