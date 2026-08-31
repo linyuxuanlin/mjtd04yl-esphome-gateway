@@ -2,7 +2,7 @@ substitutions:
   node_name: mjtd04yl-gateway
   node_friendly_name: MJTD04YL 本地网关
   project_variant: headless
-  project_version: "1.6.0"
+  project_version: "1.6.1"
   lamp_name: 米家智能充电台灯
 
 esphome:

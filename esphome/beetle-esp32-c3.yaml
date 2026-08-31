@@ -40,7 +40,7 @@ font:
     size: 10
   - file: "gfonts://Roboto"
     id: font_value
-    size: 14
+    size: 15
 
 time:
   - platform: homeassistant
@@ -120,66 +120,76 @@ display:
       it.print(56, 0, id(font_tiny), "L");
       draw_status_dot(64, 4, id(mjtd04yl_authenticated).state);
       if (isnan(id(wifi_signal_db).state)) {
-        it.print(73, 0, id(font_tiny), "W --");
+        it.print(127, 0, id(font_tiny), TextAlign::TOP_RIGHT, "W --");
       } else {
-        it.printf(73, 0, id(font_tiny), "W %.0f", id(wifi_signal_db).state);
+        it.printf(127, 0, id(font_tiny), TextAlign::TOP_RIGHT,
+            "W %.0f", id(wifi_signal_db).state);
       }
       it.horizontal_line(0, 11, 128);
 
+      // Both rows use identical anchors so labels, decimal values and units
+      // form three clean vertical columns.
       it.print(0, 17, id(font_small), "IN");
       if (isnan(id(indoor_temperature).state)) {
-        it.print(19, 13, id(font_value), "--.-°");
+        it.print(68, 12, id(font_value), TextAlign::TOP_RIGHT, "--.-°");
       } else {
-        it.printf(19, 13, id(font_value), "%.1f°", id(indoor_temperature).state);
+        it.printf(68, 12, id(font_value), TextAlign::TOP_RIGHT,
+            "%.1f°", id(indoor_temperature).state);
       }
       if (!isnan(id(indoor_temperature_delta).state)) {
         if (id(indoor_temperature_delta).state >= ${temperature_delta_alert}) {
-          draw_up(65, 18);
+          draw_up(75, 17);
         } else if (id(indoor_temperature_delta).state <= -${temperature_delta_alert}) {
-          draw_down(65, 18);
+          draw_down(75, 17);
         }
       }
       if (isnan(id(indoor_humidity).state)) {
-        it.print(127, 13, id(font_value), TextAlign::TOP_RIGHT, "--%");
+        it.print(117, 12, id(font_value), TextAlign::TOP_RIGHT, "--%");
       } else {
-        it.printf(127, 13, id(font_value), TextAlign::TOP_RIGHT,
+        it.printf(117, 12, id(font_value), TextAlign::TOP_RIGHT,
             "%.0f%%", id(indoor_humidity).state);
         if (id(indoor_humidity).state >= ${indoor_humidity_high}) {
-          draw_up(96, 18);
+          draw_up(124, 17);
         } else if (id(indoor_humidity).state <= ${indoor_humidity_low}) {
-          draw_down(96, 18);
+          draw_down(124, 17);
         }
       }
 
-      it.print(0, 35, id(font_small), "OUT");
+      it.horizontal_line(0, 30, 128);
+
+      it.print(0, 36, id(font_small), "OUT");
       if (isnan(id(outdoor_temperature).state)) {
-        it.print(24, 31, id(font_value), "--.-°");
+        it.print(68, 31, id(font_value), TextAlign::TOP_RIGHT, "--.-°");
       } else {
-        it.printf(24, 31, id(font_value), "%.1f°", id(outdoor_temperature).state);
+        it.printf(68, 31, id(font_value), TextAlign::TOP_RIGHT,
+            "%.1f°", id(outdoor_temperature).state);
       }
       if (isnan(id(outdoor_humidity).state)) {
-        it.print(127, 31, id(font_value), TextAlign::TOP_RIGHT, "--%");
+        it.print(117, 31, id(font_value), TextAlign::TOP_RIGHT, "--%");
       } else {
-        it.printf(127, 31, id(font_value), TextAlign::TOP_RIGHT,
+        it.printf(117, 31, id(font_value), TextAlign::TOP_RIGHT,
             "%.0f%%", id(outdoor_humidity).state);
       }
 
-      it.horizontal_line(0, 48, 128);
+      it.horizontal_line(0, 49, 128);
+      it.print(0, 53, id(font_tiny), "PM2.5");
       if (isnan(id(pm25).state)) {
-        it.print(0, 51, id(font_small), "PM --");
+        it.print(58, 51, id(font_small), TextAlign::TOP_RIGHT, "--");
       } else {
-        it.printf(0, 51, id(font_small), "PM %.0f", id(pm25).state);
+        it.printf(58, 51, id(font_small), TextAlign::TOP_RIGHT,
+            "%.0f", id(pm25).state);
         if (id(pm25).state >= ${pm25_high}) {
-          draw_up(40, 52);
+          draw_up(64, 52);
         }
       }
+      it.print(72, 53, id(font_tiny), "VOC");
       if (isnan(id(voc).state)) {
-        it.print(127, 51, id(font_small), TextAlign::TOP_RIGHT, "VOC --");
+        it.print(119, 51, id(font_small), TextAlign::TOP_RIGHT, "--");
       } else {
-        it.printf(127, 51, id(font_small), TextAlign::TOP_RIGHT,
-            "VOC %.0f", id(voc).state);
+        it.printf(119, 51, id(font_small), TextAlign::TOP_RIGHT,
+            "%.0f", id(voc).state);
         if (id(voc).state >= ${voc_high}) {
-          draw_up(82, 52);
+          draw_up(124, 52);
         }
       }
 
