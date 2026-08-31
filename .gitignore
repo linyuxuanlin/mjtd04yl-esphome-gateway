@@ -1,0 +1,40 @@
+.env
+.DS_Store
+.venv-esphome/
+.venv-tools/
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+androguard.db
+androguard.log
+
+# ESPHome build output and local credentials.
+esphome/.esphome/
+esphome/.cache/
+esphome/.pioenvs/
+esphome/.piolibdeps/
+esphome/secrets.yaml
+esphome/*.bin
+esphome/*.elf
+esphome/*.map
+
+# Home Assistant runtime state and secrets.
+homeassistant/.storage/
+homeassistant/.cloud/
+homeassistant/.cache/
+homeassistant/.HA_VERSION
+homeassistant/.ha_run.lock
+homeassistant/home-assistant_v2.db*
+homeassistant/home-assistant.log*
+homeassistant/*.db*
+homeassistant/deps/
+homeassistant/custom_components/
+homeassistant/tts/
+homeassistant/media/
+homeassistant/backup/
+backups/
+
+# One-shot Xiaomi account artifacts.
+*mjtd04yl*qr*.png
+*mjtd04yl*ltmk*.json

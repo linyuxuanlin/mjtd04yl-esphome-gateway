@@ -1,0 +1,9 @@
+# Headless DFRobot Beetle ESP32-C3 gateway: no display or Home Assistant
+# climate dependencies, only the local MJTD04YL bridge and diagnostics.
+substitutions:
+  node_name: mjtd04yl-gateway
+  node_friendly_name: MJTD04YL 本地网关
+  project_variant: headless
+
+packages:
+  gateway: !include packages/mjtd04yl-gateway-base.yaml

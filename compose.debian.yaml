@@ -1,0 +1,7 @@
+services:
+  homeassistant:
+    # Required for reliable LAN discovery and HomeKit Bridge mDNS on Linux.
+    network_mode: host
+    privileged: true
+    volumes:
+      - /run/dbus:/run/dbus:ro

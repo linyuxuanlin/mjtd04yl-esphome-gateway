@@ -1,0 +1,12 @@
+default_config:
+
+homeassistant:
+  name: Home Lab
+  country: CN
+  currency: CNY
+  time_zone: Asia/Shanghai
+  unit_system: metric
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

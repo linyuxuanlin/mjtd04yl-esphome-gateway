@@ -1,0 +1,40 @@
+blueprint:
+  name: 离家关闭灯光并启动扫地机器人
+  description: 当选定的家庭成员离家后关闭灯光，并启动选定的扫地机器人。
+  domain: automation
+  input:
+    presence_entity:
+      name: 家庭成员
+      description: 选择一个 person 实体；状态变为 not_home 时触发。
+      selector:
+        entity:
+          domain: person
+    lights:
+      name: 离家关闭的灯光
+      description: 选择需要关闭的灯或灯光组。
+      selector:
+        target:
+          entity:
+            domain: light
+    vacuum_entity:
+      name: 扫地机器人
+      description: 选择要启动的 vacuum 实体。
+      selector:
+        entity:
+          domain: vacuum
+
+trigger:
+  - platform: state
+    entity_id: !input presence_entity
+    to: not_home
+
+condition: []
+
+action:
+  - service: light.turn_off
+    target: !input lights
+  - service: vacuum.start
+    target:
+      entity_id: !input vacuum_entity
+
+mode: single

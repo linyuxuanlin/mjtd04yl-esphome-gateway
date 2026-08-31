@@ -1,0 +1,112 @@
+substitutions:
+  node_name: mjtd04yl-gateway
+  node_friendly_name: MJTD04YL 本地网关
+  project_variant: headless
+  project_version: "1.5.0"
+  lamp_name: 米家智能充电台灯
+
+esphome:
+  name: ${node_name}
+  friendly_name: ${node_friendly_name}
+  name_add_mac_suffix: true
+  project:
+    name: home-lab.mjtd04yl-gateway-${project_variant}
+    version: ${project_version}
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [mijia_mesh_light]
+
+esp32:
+  variant: esp32c3
+  framework:
+    type: arduino
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  level: INFO
+  logs:
+    i2c: WARN
+    i2c.idf: WARN
+    display: WARN
+    esp32_ble: INFO
+    esp32_ble_tracker: INFO
+    esp32_ble_client: INFO
+
+api:
+  encryption:
+    key: !secret esphome_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret esphome_ota_password
+
+# Wi-Fi credentials are written by the captive portal or Improv Serial and
+# retained in flash. The fallback hotspot is only used for provisioning.
+wifi:
+  ap:
+    ssid: "${node_name} Setup"
+    password: !secret fallback_ap_password
+
+captive_portal:
+improv_serial:
+
+# The lamp needs a dedicated BLE client connection. This is intentionally not
+# a generic Home Assistant Bluetooth proxy.
+esp32_ble_tracker:
+  id: ble_tracker
+  scan_parameters:
+    active: true
+    interval: 320ms
+    window: 300ms
+
+ble_client:
+  - mac_address: !secret mjtd04yl_mac_address
+    id: mjtd04yl_ble_client
+    auto_connect: true
+    on_connect:
+      then:
+        - esp32_ble_tracker.stop_scan:
+            id: ble_tracker
+    on_disconnect:
+      then:
+        - esp32_ble_tracker.start_scan:
+            id: ble_tracker
+            continuous: true
+
+light:
+  - platform: mijia_mesh_light
+    name: ${lamp_name}
+    id: mjtd04yl_light
+    output_id: mjtd04yl_light_output
+    ble_client_id: mjtd04yl_ble_client
+    ltmk: !secret mjtd04yl_gatt_ltmk
+    gamma_correct: 1.0
+    default_transition_length: 0s
+    restore_mode: ALWAYS_OFF
+    authenticated:
+      name: ${lamp_name}本地连接
+      entity_category: diagnostic
+
+text_sensor:
+  - platform: version
+    name: ESPHome Version
+
+sensor:
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+  - platform: wifi_signal
+    name: Wi-Fi Signal
+    update_interval: 60s
+
+binary_sensor:
+  - platform: status
+    id: node_status
+    name: Status
+
+button:
+  - platform: restart
+    name: Restart

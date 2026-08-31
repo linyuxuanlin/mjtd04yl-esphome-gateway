@@ -1,0 +1,43 @@
+name: ESPHome build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile:
+    strategy:
+      matrix:
+        config:
+          - esphome/beetle-esp32-c3-gateway.yaml
+          - esphome/beetle-esp32-c3.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install "esphome>=2026.8,<2026.9"
+      - name: Prepare non-production test secrets
+        run: |
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+
+          values = {
+              "esphome_api_encryption_key": base64.b64encode(bytes(32)).decode(),
+              "esphome_ota_password": "ci-only-ota-password",
+              "fallback_ap_password": "ci-only-ap-password",
+              "mjtd04yl_mac_address": "AA:BB:CC:DD:EE:FF",
+              "mjtd04yl_gatt_ltmk": "00" * 32,
+              "indoor_temperature_entity_id": "sensor.indoor_temperature",
+              "indoor_humidity_entity_id": "sensor.indoor_humidity",
+              "outdoor_weather_entity_id": "weather.home",
+          }
+          Path("esphome/secrets.yaml").write_text(
+              "".join(f'{key}: "{value}"\n' for key, value in values.items())
+          )
+          PY
+      - run: esphome config "${{ matrix.config }}"
+      - run: esphome compile "${{ matrix.config }}"

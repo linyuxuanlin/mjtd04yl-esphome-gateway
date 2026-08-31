@@ -1,0 +1,7 @@
+services:
+  homeassistant:
+    # Docker Desktop on macOS uses a VM, so expose the web UI explicitly.
+    # mDNS-dependent discovery may be less reliable than on the Debian host;
+    # manual IP/hostname setup remains available in Home Assistant.
+    ports:
+      - "${HA_HTTP_PORT:-8123}:8123"

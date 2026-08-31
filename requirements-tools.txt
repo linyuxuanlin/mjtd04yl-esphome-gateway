@@ -1,0 +1,5 @@
+# Optional helpers for Xiaomi QR login and ESPHome API smoke tests.
+aioesphomeapi>=45,<46
+aiohttp>=3.10,<4
+bleak>=1,<2
+miservice>=3,<4

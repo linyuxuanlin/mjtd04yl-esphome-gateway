@@ -1,0 +1,90 @@
+# DFRobot Beetle ESP32-C3 gateway with an optional 128x64 I2C OLED.
+substitutions:
+  node_name: beetle-esp32-c3
+  node_friendly_name: Beetle ESP32-C3 台灯网关
+  project_variant: oled
+  oled_scl_pin: GPIO0
+  oled_sda_pin: GPIO1
+  oled_model: "SSD1306 128x64"
+  oled_address: "0x3C"
+  indoor_temperature_entity_id: !secret indoor_temperature_entity_id
+  indoor_humidity_entity_id: !secret indoor_humidity_entity_id
+  outdoor_weather_entity_id: !secret outdoor_weather_entity_id
+
+packages:
+  gateway: !include packages/mjtd04yl-gateway-base.yaml
+
+i2c:
+  id: oled_bus
+  scl: ${oled_scl_pin}
+  sda: ${oled_sda_pin}
+  scan: true
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 10
+  - file: "gfonts://Roboto"
+    id: font_value
+    size: 17
+
+display:
+  - platform: ssd1306_i2c
+    model: ${oled_model}
+    address: ${oled_address}
+    i2c_id: oled_bus
+    rotation: 180
+    update_interval: 2s
+    lambda: |-
+      it.print(0, 0, id(font_small), "HOME CLIMATE");
+      it.printf(127, 0, id(font_small), TextAlign::TOP_RIGHT,
+          "%s", id(node_status).state ? "HA OK" : "HA --");
+      it.horizontal_line(0, 12, 128);
+
+      it.print(0, 20, id(font_small), "OUT");
+      if (isnan(id(outdoor_temperature).state)) {
+        it.print(28, 15, id(font_value), "--.-°");
+      } else {
+        it.printf(28, 15, id(font_value), "%.1f°", id(outdoor_temperature).state);
+      }
+      if (isnan(id(outdoor_humidity).state)) {
+        it.print(127, 15, id(font_value), TextAlign::TOP_RIGHT, "--%");
+      } else {
+        it.printf(127, 15, id(font_value), TextAlign::TOP_RIGHT,
+            "%.0f%%", id(outdoor_humidity).state);
+      }
+
+      it.horizontal_line(0, 38, 128);
+
+      it.print(0, 45, id(font_small), "IN");
+      if (isnan(id(indoor_temperature).state)) {
+        it.print(28, 40, id(font_value), "--.-°");
+      } else {
+        it.printf(28, 40, id(font_value), "%.1f°", id(indoor_temperature).state);
+      }
+      if (isnan(id(indoor_humidity).state)) {
+        it.print(127, 40, id(font_value), TextAlign::TOP_RIGHT, "--%");
+      } else {
+        it.printf(127, 40, id(font_value), TextAlign::TOP_RIGHT,
+            "%.0f%%", id(indoor_humidity).state);
+      }
+
+sensor:
+  - platform: homeassistant
+    id: indoor_temperature
+    entity_id: ${indoor_temperature_entity_id}
+    internal: true
+  - platform: homeassistant
+    id: indoor_humidity
+    entity_id: ${indoor_humidity_entity_id}
+    internal: true
+  - platform: homeassistant
+    id: outdoor_temperature
+    entity_id: ${outdoor_weather_entity_id}
+    attribute: temperature
+    internal: true
+  - platform: homeassistant
+    id: outdoor_humidity
+    entity_id: ${outdoor_weather_entity_id}
+    attribute: humidity
+    internal: true
